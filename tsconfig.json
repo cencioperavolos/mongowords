@@ -15,6 +15,14 @@
     "isolatedModules": true,
     "jsx": "preserve"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "pages/_app.js",
+    "pages/api/auth/[...nextauth].ts",
+    "pages/user/userProfile.js",
+    "__tests__/prova.test.js"
+  ],
   "exclude": ["node_modules"]
 }
