@@ -10,7 +10,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getSession({ req })
 
   switch (req.method) {
-    //get single word by index
+    //get single word by index ####################################################################
+    //and corelated expressions
     case 'GET':
       try {
         const client = await clientPromise
@@ -31,19 +32,6 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
                     as: 'expressions',
                   },
                 },
-                // {
-                //   $project: {
-                //     clautano: 1,
-                //     categoria: 1,
-                //     traduzione: 1,
-                //     isVerified: 1,
-                //     created: 1,
-                //     updated: 1,
-                //     'expressions._id': 1,
-                //     'expressions.clautano': 1,
-                //     'expressions.italiano': 1,
-                //   },
-                // },
               ])
               .toArray()
 
@@ -73,30 +61,26 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
                     as: 'expressions',
                   },
                 },
-                // {
-                //   $project: {
-                //     clautano: 1,
-                //     categoria: 1,
-                //     traduzione: 1,
-                //     isVerified: 1,
-                //     created: 1,
-                //     updated: 1,
-                //     'expressions._id': 1,
-                //     'expressions.clautano': 1,
-                //     'expressions.italiano': 1,
-                //   },
-                // },
               ])
               .toArray()
             res.status(200).json(word[0]) //OK
           }
         } else if (req.query.find) {
+          //get max 10 words by regex #############################################################
+          const find = Array.isArray(req.query.find)
+            ? diacriticSensitiveRegex(req.query.find[0])
+            : diacriticSensitiveRegex(req.query.find)
+          console.log('find=' + find)
           if (session && session.user.isAdmin) {
             //all words
             const words = await db
               .collection('words')
               .find(
-                { clautano: { $gte: req.query.find } },
+                {
+                  clautano: {
+                    $regex: new RegExp(find, 'i'),
+                  },
+                },
                 {
                   sort: { clautano: 1 },
                   collation: { locale: 'it', strength: 1 },
@@ -110,7 +94,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
               .collection('words')
               .find(
                 {
-                  clautano: { $gte: req.query.find },
+                  clautano: {
+                    $regex: new RegExp(find, 'i'),
+                  },
                   $or: [
                     { isVerified: true }, //words veirified
                     {
@@ -153,6 +139,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         } else {
           console.log({ session })
           const word: Word = req.body.word
+          console.log(req.body)
           const client = await clientPromise
           const db = client.db()
           if (!word._id) {
@@ -174,7 +161,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             ////// EDITED WORD
             if (
               !session.user.isAdmin &&
-              session.user._id !== word.created.userId
+              session.user._id !== word.created!.userId
             ) {
               res.status(403).json({
                 //FORBIDDEN
@@ -185,7 +172,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             updateExpressions(word, session.user, db)
 
             delete word.expressions
-            const updateResult = await db.collection('words').updateOne(
+            const updateResult = await db.collection('words').findOneAndUpdate(
               { _id: new ObjectId(word._id) },
               {
                 $set: {
@@ -202,9 +189,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
                     username: session.user.name,
                   },
                 },
-              }
-              // { upsert: true }
+              },
+              { returnDocument: 'after' }
             )
+            console.log('-------------------- ', updateResult)
             res.status(201).json(updateResult)
           }
         }
@@ -227,7 +215,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
           })
         } else if (
           !session.user.isAdmin &&
-          session.user._id !== word.created.userId
+          session.user._id !== word.created!.userId
         ) {
           res.status(401).json({
             name: 'Error',
@@ -248,7 +236,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             .toArray()
           expressionsToEdit.forEach((expression) => {
             const newWords = expression.words.filter(
-              (wd: Word) => !wd._id.equals(word._id)
+              (wd: Word) => !wd._id!.equals(word._id!)
             )
             db.collection('expressions').updateOne(
               { _id: new ObjectId(expression._id) },
@@ -279,18 +267,22 @@ function updateExpressions(word: Word, user: SessionUser, database: Db) {
       word.expressions.forEach(async (exp) => {
         if (!exp._id) {
           ////// NEW EXPRESSION
+          console.log('new ---->', { exp })
           exp.created = {
             userId: user._id,
             username: user.name,
             date: new Date(),
           }
           exp.isVerified = user.isVerified
-          exp.words = [{ _id: new ObjectId(word._id), clautano: word.clautano }]
+          exp.words = [
+            { _id: new ObjectId(word._id), clautano: word.clautano ?? '' },
+          ]
           const insertResult = await database
             .collection('expressions')
             .insertOne(exp)
         } else {
           ////// UPDATE EXPRESSION
+          console.log('update ---->', { exp })
 
           const wordsSet = []
           const map = new Map()
@@ -337,4 +329,18 @@ function updateExpressions(word: Word, user: SessionUser, database: Db) {
   }
 
   return 'CIAO'
+}
+
+function diacriticSensitiveRegex(string = '') {
+  return string
+    .replace(/a/g, '[a,á,à,ä]')
+    .replace(/e/g, '[e,é,è,ë]')
+    .replace(/i/g, '[i,í,ï]')
+    .replace(/o/g, '[o,ó,ö,ò]')
+    .replace(/u/g, '[u,ü,ú,ù]')
+    .replace(/A/g, '[a,á,à,ä]')
+    .replace(/E/g, '[e,é,è,ë]')
+    .replace(/I/g, '[i,í,ï]')
+    .replace(/O/g, '[o,ó,ö,ò]')
+    .replace(/U/g, '[u,ü,ú,ù]')
 }

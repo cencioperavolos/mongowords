@@ -6,14 +6,11 @@ declare module 'next-auth' {
    * Returned by `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
    */
   interface Session {
-    user: SessionUser & DefaultSession['user']
+    user: SessionUser
   }
 
-  /**
-   * The shape of the user object returned in the OAuth providers' `profile` callback,
-   * or the second parameter of the `session` callback, when using a database.
-   */
   interface User {
+    // aka database User (merge default naxt-auth user with properties: id email image )
     _id: ObjectId
     info: {
       firstname: string
@@ -26,6 +23,7 @@ declare module 'next-auth' {
 
   interface SessionUser {
     _id: ObjectId
+    email: string
     name: string
     isVerified: boolean
     isAdmin: boolean

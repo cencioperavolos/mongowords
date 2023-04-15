@@ -31,9 +31,10 @@ export default NextAuth({
     async session({ session, token, user }) {
       console.log('called Session callback: ', new Date(Date.now()))
 
-      delete session.user.email
+      // delete session.user.email
 
       session.user._id = new ObjectId(user.id)
+      session.user.email = user.email!
       session.user.isAdmin = user.isAdmin
       session.user.isVerified = user.isVerified
       session.user.name = `${user.info.firstname} ${user.info.lastname} '${user.info.surname}'`

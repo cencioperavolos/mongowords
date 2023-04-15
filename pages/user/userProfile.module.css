@@ -1,0 +1,48 @@
+.main {
+  background-color: rgba(97, 156, 2, 0.836);
+  width: 100%;
+  max-width: 800px;
+  height: 80vh;
+  margin: 0 auto;
+  font-family: Tahoma;
+}
+.main h1 {
+  text-align: center;
+  padding: 1em 0 0 0;
+}
+.main p {
+  text-align: center;
+}
+.main form {
+  width: 80%;
+  margin: auto;
+  padding-bottom: 20px;
+}
+.main fieldset {
+  border: 0;
+  border: 2px solid green;
+  margin: 2em 0;
+  padding: 1em 2em;
+}
+.main label {
+  display: block;
+  margin: 0.5rem 0;
+}
+.main input {
+  width: 100%;
+  min-height: 1.5em;
+  margin: 0.2em 0 0 0;
+}
+
+.main input[type='submit'] {
+  min-height: 2.5em;
+  border: 0;
+  border-radius: 0.5em;
+  background: darkgreen;
+  color: white;
+}
+
+.main input[type='submit']:hover {
+  border: solid 1px yellow;
+  background: rgba(147, 238, 1, 0.836);
+}

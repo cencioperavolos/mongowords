@@ -1,0 +1,36 @@
+body {
+  background-color: silver;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+header {
+  background: linear-gradient(90deg, coral, white);
+  padding: 0.5rem;
+}
+
+nav {
+  background: coral;
+  display: flex;
+  flex-wrap: wrap;
+  /* justify-content: space-around; */
+}
+
+nav > * {
+  display: inline;
+  margin: 0 10px;
+}
+
+footer {
+  background-color: coral;
+  min-height: 100px;
+}
+
+main {
+  color: darkblue;
+}
+
+.wordSearch {
+  background: red;
+  margin-left: 300px;
+}
