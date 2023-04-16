@@ -10,8 +10,8 @@ function EditExpressionComponent({
   expression,
   setExpression,
 }: {
-  expression: Expression
-  setExpression: Dispatch<SetStateAction<Expression>>
+  expression: Expression | undefined
+  setExpression: Dispatch<SetStateAction<Expression | undefined>>
 }) {
   /** state for manage expression's words */
   const [wordsList, setWordsList] = useState<Word[]>([])
@@ -19,7 +19,7 @@ function EditExpressionComponent({
 
   function handleAddWord(word: Word) {
     const wordToAdd = { _id: word._id!, clautano: word.clautano! }
-    const newWords = expression.words
+    const newWords = expression?.words
       ? [...expression?.words, wordToAdd]
       : [wordToAdd]
     setExpression({ ...expression, words: newWords })
@@ -27,7 +27,7 @@ function EditExpressionComponent({
   }
 
   function handleRemoveWord(word: Word) {
-    const newWords = expression.words!.filter((w) => w._id !== word._id)
+    const newWords = expression?.words!.filter((w) => w._id !== word._id)
     setExpression({ ...expression, words: newWords })
     setWordsList([])
   }
@@ -39,7 +39,7 @@ function EditExpressionComponent({
         type='text'
         name='clautano'
         id='clautano'
-        value={expression.clautano}
+        value={expression?.clautano ?? ''}
         onChange={(e) => {
           setExpression({ ...expression, clautano: e.target.value })
         }}
@@ -50,7 +50,7 @@ function EditExpressionComponent({
         type='text'
         name='italiano'
         id=''
-        value={expression.italiano}
+        value={expression?.italiano ?? ''}
         onChange={(e) => {
           setExpression({ ...expression, italiano: e.target.value })
         }}
@@ -61,12 +61,12 @@ function EditExpressionComponent({
         type='checkbox'
         name='voc_claut_1996'
         id='voc_claut_i996'
-        checked={expression.voc_claut_1996 ?? false}
+        checked={expression?.voc_claut_1996 ?? false}
         onChange={(e) => {
           setExpression({ ...expression, voc_claut_1996: e.target.checked })
         }}
       />
-      {expression.words && expression.words.length > 0 ? (
+      {expression?.words && expression.words.length > 0 ? (
         <>
           <h5>Linked words</h5>
           <ol>

@@ -1,29 +1,18 @@
 import { useRouter } from 'next/router'
-import { Dispatch, SetStateAction, useEffect, useState } from 'react'
-import { Expression, Word } from '../../types'
-import { ObjectId } from 'mongodb'
-import EditWordComponent from '../../components/editWordComponent'
-import EditExpressionComponent from '../../components/editExpressionComponent'
+import { useEffect, useState } from 'react'
+import { Expression } from '../../types'
 
-const wordDefault = {
-  _id: undefined,
-  clautano: '',
-  alternativo: '',
-  categoria: '',
-  traduzione: '',
-  voc_claut_1996: false,
-  isVerified: false,
-  expressions: [],
-  created: undefined,
-  updated: undefined,
-}
+import EditExpressionComponent from '../../components/editExpressionComponent'
+import Link from 'next/link'
+
+let restore: Expression
 
 export default function expressionPage() {
   const router = useRouter()
   const { id } = router.query
 
   const [loading, setLoading] = useState(true)
-  const [expression, setExpression] = useState<Expression>()
+  const [expression, setExpression] = useState<Expression | undefined>()
   const [edit, setEdit] = useState(false)
 
   useEffect(() => {
@@ -35,6 +24,8 @@ export default function expressionPage() {
         .then((result) => {
           console.log('result---- ', result)
           setExpression(result[0])
+          restore = structuredClone(result[0])
+          console.log({ restore })
           setLoading(false)
         })
         .catch((error) => {
@@ -87,6 +78,13 @@ export default function expressionPage() {
           >
             Save Expression
           </button>
+          <button
+            onClick={() => {
+              setExpression(restore)
+            }}
+          >
+            Reset
+          </button>
         </>
       ) : (
         <>
@@ -96,7 +94,9 @@ export default function expressionPage() {
           <p>{expression?.italiano}</p>
           <span>peraulis: </span>
           {expression?.words?.map((w) => (
-            <span>{w.clautano} </span>
+            <span>
+              <Link href={`/word/${w._id}`}>{w.clautano}</Link>{' '}
+            </span>
           ))}
         </>
       )}

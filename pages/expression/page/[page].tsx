@@ -44,16 +44,16 @@ export default function expressionPage() {
       <h2> Page of expressions! </h2>
       <div>
         <Link
-          href={`/expression/page/${
-            Number(expressionsPage.page) - 1
-          }?find=${find}`}
+          href={`/expression/page/${Number(expressionsPage.page) - 1}?find=${
+            find ?? ''
+          }`}
         >
           Previous
         </Link>
         <Link
-          href={`/expression/page/${
-            Number(expressionsPage.page) + 1
-          }?find=${find}`}
+          href={`/expression/page/${Number(expressionsPage.page) + 1}?find=${
+            find ?? ''
+          }`}
         >
           Next
         </Link>

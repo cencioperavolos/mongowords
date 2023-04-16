@@ -5,18 +5,7 @@ import { ObjectId } from 'mongodb'
 import EditWordComponent from '../../components/editWordComponent'
 import Link from 'next/link'
 
-const wordDefault = {
-  _id: undefined,
-  clautano: '',
-  alternativo: '',
-  categoria: '',
-  traduzione: '',
-  voc_claut_1996: false,
-  isVerified: false,
-  expressions: [],
-  created: undefined,
-  updated: undefined,
-}
+let restore: Word
 
 const wordPage = () => {
   const router = useRouter()
@@ -32,6 +21,7 @@ const wordPage = () => {
           return response.json()
         })
         .then((result) => {
+          restore = structuredClone(result)
           setWord(result)
         })
         .catch((error) => {
@@ -54,7 +44,32 @@ const wordPage = () => {
         />
       </h2>
       {edit ? (
-        <EditWordComponent word={word} setWord={setWord} />
+        <>
+          <EditWordComponent word={word} setWord={setWord} />
+          <button
+            onClick={() => {
+              console.log({ word })
+              fetch(`/api/word/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ word }),
+              })
+                .then((response) => {
+                  return response.json()
+                })
+                .then((result) => {
+                  setWord(JSON.parse(result))
+                  console.log('result ------>', result)
+                })
+                .catch((error) => {
+                  console.log(error)
+                })
+            }}
+          >
+            Save word
+          </button>
+          <button onClick={() => setWord(restore)}>Reset</button>
+        </>
       ) : (
         <>
           <p>{word?.clautano}</p>
@@ -62,7 +77,7 @@ const wordPage = () => {
           <ol>
             {word?.expressions?.map((exp) => (
               <li>
-                <Link href='/'>{exp.clautano}</Link>
+                <Link href={`/expression/${exp._id}`}>{exp.clautano}</Link>
               </li>
             ))}
           </ol>
