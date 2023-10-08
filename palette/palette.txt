@@ -1,0 +1,20 @@
+// SASS style sheet */
+// Palette color codes */
+// Palette URL: http://paletton.com/#uid=20L0u0k1Ktp1SZi1hHCatkUgadP */
+
+// Feel free to copy&paste color codes to your application */
+
+
+// As hex codes */
+
+$color-primary-0: #EAE5DE;	// Main Primary color */
+$color-primary-1: #FFF9F0;
+$color-primary-2: #FFFBF5;
+$color-primary-3: #A79070;
+$color-primary-4: #6E5736;
+
+$color-complement-0: #909498;	// Main Complement color */
+$color-complement-1: #EDF4FA;
+$color-complement-2: #C1C5C9;
+$color-complement-3: #4B5C6C;
+$color-complement-4: #263747;

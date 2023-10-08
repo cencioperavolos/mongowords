@@ -3,9 +3,11 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { getSession } from 'next-auth/react'
 import clientPromise from '../../../lib/mongodb'
 import { Expression, Word } from '../../../types'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../auth/[...nextauth]'
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  const session = await getSession({ req })
+  const session = await getServerSession(req, res, authOptions)
   switch (req.method) {
     //get single expression by index ####################################################################
     case 'GET':
@@ -40,11 +42,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
           throw new Error('Url not valid!')
         }
       } catch (error: any) {
-        console.log(error)
-        res.status(500).json({
-          name: error.name,
-          message: error.message,
-        })
+        res.status(500).json({ name: error.name, message: error.message })
       }
       break
 
@@ -59,13 +57,26 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
           const expression = req.body.expression
           if (expression.words) {
             const newIds = expression.words.map((word: Word) => {
-              return { _id: new ObjectId(word._id), clautano: word.clautano }
+              // if (!session.user.isVerified) {
+              //   console.log('word.created.user_id ', word.created?.userId)
+              //   console.log('user._id ', session.user._id.toString())
+
+              //   if (
+              //     word.created?.userId.toString() !==
+              //     session.user._id.toString()
+              //   )
+              //     throw new Error(
+              //       "L'utente non verificato può inserire solo parole 'sue'"
+              //     )
+              // }
+              return { _id: new ObjectId(word._id), clautano: word.clautano } // aggiungere solo parole rispondenti al tipo di user
             })
             expression.words = newIds
           }
           const client = await clientPromise
           const db = client.db()
-          if (expression._id == undefined) {
+          if (!expression._id) {
+            //NEW EXPRESSION
             expression.isVerified = session.user.isVerified
             expression.created = {
               userId: session.user._id,
@@ -75,41 +86,46 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             const insertResult = await db
               .collection('expressions')
               .insertOne(expression)
-            res.status(201).json(insertResult) //CREATED
+            res.status(201).json(insertResult)
           } else {
+            /////EDITED EXPRESSION
             if (
               !session.user.isAdmin &&
-              session.user._id !== expression.created?.userId
+              !session.user._id.equals(expression.created.userId)
             ) {
+              //FORBIDDEN
               res.status(403).json({
-                //FORBIDDEN
                 name: 'Error',
                 message: "Unhautorized user can't edit other's expressions",
               })
             }
-            const updateResult = await db.collection('expressions').updateOne(
-              { _id: new ObjectId(expression._id) },
-              {
-                $set: {
-                  clautano: expression.clautano,
-                  italiano: expression.italiano,
-                  voc_claut_1996: expression.voc_claut_1996 ? true : false,
-                  isVerified: session.user.isVerified,
-                  words: expression.words,
-                  updated: {
-                    date: new Date(),
-                    userId: session.user._id,
-                    username: session.user.name,
+            const updateResult = await db
+              .collection('expressions')
+              .findOneAndUpdate(
+                { _id: new ObjectId(expression._id) },
+                {
+                  $set: {
+                    clautano: expression.clautano,
+                    italiano: expression.italiano,
+                    voc_claut_1996: expression.voc_claut_1996 ? true : false,
+                    isVerified: session.user.isVerified || false,
+                    words: expression.words,
+                    updated: {
+                      date: new Date(),
+                      userId: session.user._id,
+                      username: session.user.name,
+                    },
                   },
                 },
-              },
-              { upsert: true }
-            )
-            res.status(201).json(updateResult)
+                { upsert: true, returnDocument: 'after' }
+              )
+            console.log('-------------------- ', updateResult)
+
+            res.status(201).json(updateResult.value)
           }
         }
       } catch (error: any) {
-        console.log(error)
+        console.log('ERROR CATCHED: ', error)
         res.status(500).json({
           name: error.name,
           message: error.message,
@@ -127,7 +143,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
           })
         } else if (
           !session.user.isAdmin &&
-          session.user._id !== expression.created!.userId
+          !session.user._id.equals(expression.created!.userId)
         ) {
           res.status(401).json({
             name: 'Error',
@@ -145,8 +161,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       } catch (error: any) {
         console.log(error)
         res.status(500).json({
-          name: error.name,
-          message: error.message,
+          error: {
+            name: error.name,
+            message: error.message,
+          },
         })
       }
       break

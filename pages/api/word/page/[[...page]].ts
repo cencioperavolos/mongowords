@@ -53,9 +53,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             $or: [
               { isVerified: true },
               {
-                'created.userId': user
-                  ? new ObjectId(user._id)
-                  : new ObjectId(123),
+                'created.userId': user ? user._id : '123',
               },
             ],
           }
@@ -86,8 +84,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       } catch (error: any) {
         console.log(error)
         res.status(500).json({
-          name: error.name,
-          message: error.message,
+          error: {
+            name: error.name,
+            message: error.message,
+          },
         })
       }
       break
@@ -132,7 +132,7 @@ async function searchPage(
     searchFilter.$or = [
       { isVerified: true },
       {
-        'created.userId': user ? user._id : new ObjectId(123),
+        'created.userId': user ? new ObjectId(user._id) : new ObjectId(123),
       },
     ]
   }

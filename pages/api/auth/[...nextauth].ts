@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth'
+import NextAuth, { NextAuthOptions } from 'next-auth'
 import { MongoDBAdapter } from '@next-auth/mongodb-adapter'
 import EmailProvider from 'next-auth/providers/email'
 import MongoClientPromise from '../../../lib/mongodb'
@@ -7,8 +7,8 @@ import { ObjectId } from 'mongodb'
 const THIRTY_DAYS = 30 * 24 * 60 * 60
 const THIRTY_MINUTES = 30 * 60
 
-export default NextAuth({
-  secret: process.env.SECRET,
+export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
     maxAge: THIRTY_DAYS,
     updateAge: THIRTY_MINUTES,
@@ -27,18 +27,20 @@ export default NextAuth({
       from: process.env.EMAIL_FROM,
     }),
   ],
+  theme: {
+    colorScheme: 'light',
+  },
   callbacks: {
     async session({ session, token, user }) {
-      console.log('called Session callback: ', new Date(Date.now()))
-
+      // console.log('called Session callback: ', new Date(Date.now()))
       // delete session.user.email
-
       session.user._id = new ObjectId(user.id)
       session.user.email = user.email!
       session.user.isAdmin = user.isAdmin
       session.user.isVerified = user.isVerified
-      session.user.name = `${user.info.firstname} ${user.info.lastname} '${user.info.surname}'`
-
+      if (user.info) {
+        session.user.name = `${user.info.firstname} ${user.info.lastname} '${user.info.surname}'`
+      }
       return session
     },
     async signIn({ user, account, profile, email, credentials }) {
@@ -55,6 +57,9 @@ export default NextAuth({
     },
   },
   pages: {
+    signIn: '/auth/email-signin',
     newUser: '/user/userProfile', // New users will be directed here on first sign in (leave the property out if not of interest)
   },
-})
+}
+
+export default NextAuth(authOptions)

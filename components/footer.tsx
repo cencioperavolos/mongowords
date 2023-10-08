@@ -2,9 +2,11 @@ import Link from 'next/link'
 
 function Footer() {
   return (
-    <footer>
-      <Link href='/'>Home</Link>
-    </footer>
+    <div className='bg-sugar text-light d-flex justify-content-center'>
+      <small>
+        DEVELOPED BY: <em>Cencio Peravolos</em>
+      </small>
+    </div>
   )
 }
 

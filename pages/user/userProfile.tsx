@@ -1,17 +1,6 @@
-import { ObjectId } from 'mongodb'
 import { User } from 'next-auth'
-
 import { useSession } from 'next-auth/react'
-import { useEffect, useReducer, useState } from 'react'
-import styles from './userProfile.module.css'
-
-// const userReducer = (state: any, action: { type: string; payload: any }) => {
-//   if (action.type === 'SET_USER') {
-//     return action.payload
-//   } else {
-//     throw new Error()
-//   }
-// }
+import { useEffect, useState } from 'react'
 
 function userProfile() {
   const { data: session, status } = useSession()
@@ -55,81 +44,78 @@ function userProfile() {
       })
   }
 
-  // const [user, dispatchUser] = useReducer(userReducer, [])
+  if (status === 'loading')
+    return <p className='text-center mt-5'>loading...</p>
 
-  // useEffect(() => {
-  //   fetch(`http://localhost:3000/api/user`) // B
-  //     .then((response) => response.json()) // C
-  //     .then((result) => {
-  //       dispatchUser({
-  //         type: 'SET_USER',
-  //         payload: { user: result }, // D
-  //       })
-  //     })
-  //     .catch(() =>
-  //       dispatchUser({ type: 'STORIES_FETCH_FAILURE', payload: 'boh' })
-  //     ) ////////////jdfgjdfhgdjf
-  // }, [])
-
-  if (status === 'loading') return <p>Loading...</p>
-
-  if (status === 'unauthenticated') return <p>Access Denied</p>
+  if (status === 'unauthenticated')
+    return <p className='text-center mt-5'>Access Denied</p>
 
   return (
     <div>
-      <main className={styles.main}>
-        <h1>Profilo utente</h1>
-        UserDetail: {userDetail?.info.firstname}
+      <h1 className='h6 text-dark text-center mt-2'>
+        {' '}
+        P R O F I L O U T E N T E
+      </h1>
+      <div className='text-center mt-2'>
         <p>
-          <b>{session ? session.user!.name : 'No user'}</b>{' '}
-          {session ? '- ' + session.user!.email : ''}
+          <b>{session!.user!.email}</b>
         </p>
-        <form method='PUT' onSubmit={handleSubmit}>
-          <fieldset>
-            <legend>Inserisci qui i tuoi dati personali:</legend>
-            <label htmlFor='firstname'>
-              Nome
-              <input
-                required
-                id='firstname'
-                type='text'
-                name='firstname'
-                placeholder='Teresa'
-                value={userDetail?.info.firstname || ''}
-                onChange={onChange}
-              ></input>
-            </label>
-            <label htmlFor='lastname'>
-              Cognome
-              <input
-                required
-                id='lastname'
-                type='text'
-                name='lastname'
-                placeholder='Borsatti'
-                value={userDetail?.info.lastname || ''}
-                onChange={onChange}
-              ></input>
-            </label>
-            <label htmlFor='surname'>
-              Sopranome
-              <input
-                required
-                id='surname'
-                type='text'
-                name='surname'
-                placeholder='Chinese'
-                value={userDetail?.info.surname || ''}
-                onChange={onChange}
-              ></input>
-            </label>
-          </fieldset>
-          <input type='submit' value='Invia' />
-        </form>
-      </main>
-      <footer>
-        <p>Cencio Peravolos dev</p>
-      </footer>
+        <p> {session?.user?.name ? ` - ${session.user.name}` : ''}</p>
+        <p>
+          {session?.user.isVerified
+            ? 'Utente verificato'
+            : 'Utente da verificare'}{' '}
+          {session!.user.isAdmin && '- AMMINISTRATORE'}{' '}
+        </p>
+      </div>
+      <form method='PUT' onSubmit={handleSubmit}>
+        <div className='form-floating pb-1'>
+          <input
+            className='form-control'
+            required
+            id='firstname'
+            type='text'
+            name='firstname'
+            placeholder='Teresa'
+            value={userDetail?.info?.firstname || ''}
+            onChange={onChange}
+          />
+          <label htmlFor='firstname'>Nome</label>
+        </div>
+        <div className='form-floating pb-1'>
+          <input
+            className='form-control'
+            required
+            id='lastname'
+            type='text'
+            name='lastname'
+            placeholder='Borsatti'
+            value={userDetail?.info?.lastname || ''}
+            onChange={onChange}
+          ></input>
+          <label htmlFor='lastname'>Cognome</label>
+        </div>
+        <div className='form-floating pb-1'>
+          <input
+            className='form-control'
+            required
+            id='surname'
+            type='text'
+            name='surname'
+            placeholder='Chinese'
+            value={userDetail?.info?.surname || ''}
+            onChange={onChange}
+          ></input>
+          <label htmlFor='surname'>Sopranome</label>
+        </div>
+        <div className='d-flex justify-content-center'>
+          <input
+            className='btn btn-dark2 mt-3'
+            type='submit'
+            value='Salva modifiche'
+          />
+        </div>
+      </form>
     </div>
   )
 }

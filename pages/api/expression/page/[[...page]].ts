@@ -9,7 +9,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   switch (req.method) {
     case 'GET':
-      const perPage = 5
+      const perPage = 10
       const page = parseInt(req.query.page as string)
       const current = isNaN(page) || page < 1 ? 0 : page - 1 // default page to 1
 

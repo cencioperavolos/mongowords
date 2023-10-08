@@ -5,9 +5,12 @@ import { getSession } from 'next-auth/react'
 import { Word } from '../../../types'
 import { _id } from '@next-auth/mongodb-adapter'
 import { Session, SessionUser, User } from 'next-auth'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '../auth/[...nextauth]'
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  const session = await getSession({ req })
+  const session = await getServerSession(req, res, authOptions)
+  // console.log('request cookie ----------------> : ', req.cookies)
 
   switch (req.method) {
     //get single word by index ####################################################################
@@ -35,7 +38,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
               ])
               .toArray()
 
-            res.status(200).json(word[0]) //OK
+            res.status(200).json(word) //OK
           } else {
             const word = await db
               .collection('words')
@@ -47,8 +50,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
                       { isVerified: true }, //words veirified
                       {
                         'created.userId': session
-                          ? session.user._id
-                          : new ObjectId(123),
+                          ? session.user._id.toString()
+                          : '123',
                       }, //or owned words
                     ],
                   },
@@ -63,7 +66,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
                 },
               ])
               .toArray()
-            res.status(200).json(word[0]) //OK
+            res.status(200).json(word) //OK
           }
         } else if (req.query.find) {
           //get max 10 words by regex #############################################################
@@ -90,6 +93,16 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
               .toArray()
             res.status(200).send(words) //OK
           } else {
+            let filter = []
+            filter.push({
+              'created.userId': session
+                ? session.user._id.toString()
+                : new ObjectId(123),
+            }) //owned words
+            if (session?.user.isVerified) {
+              filter.push({ isVerified: true })
+            }
+
             const words = await db
               .collection('words')
               .find(
@@ -97,14 +110,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
                   clautano: {
                     $regex: new RegExp(find, 'i'),
                   },
-                  $or: [
-                    { isVerified: true }, //words veirified
-                    {
-                      'created.userId': session
-                        ? session.user._id
-                        : new ObjectId(123),
-                    }, //or owned words
-                  ],
+                  $or: filter,
                 },
                 {
                   sort: { clautano: 1 },
@@ -120,16 +126,12 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         }
       } catch (error: any) {
         console.log(error)
-        res.status(500).json({
-          name: error.name,
-          message: error.message,
-        })
+        res.status(500).json({ name: error.name, message: error.message })
       }
       break
 
     case 'POST': //PUT
       try {
-        const session = await getSession({ req })
         if (!session) {
           console.log('not session!!!!!!!!!!!!!!!!!!!!!')
           res.status(401).json({
@@ -137,16 +139,14 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             message: "Unautheticated user can't add/edit words",
           })
         } else {
-          console.log({ session })
           const word: Word = req.body.word
-          console.log(req.body)
           const client = await clientPromise
           const db = client.db()
           if (!word._id) {
             ////// NEW WORD
             word.isVerified = session.user.isVerified
             word.created = {
-              userId: session.user._id,
+              userId: new ObjectId(session.user._id),
               username: session.user.name,
               date: new Date(),
             }
@@ -155,13 +155,13 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             const insertResult = await db.collection('words').insertOne(word)
             word._id = insertResult.insertedId
             word.expressions = expressions
-            updateExpressions(word, session.user, db)
+            await updateExpressions(word, session.user, db) //UPDATE_EXPRESSIONS
             res.status(201).json(insertResult) //CREATED
           } else {
             ////// EDITED WORD
             if (
               !session.user.isAdmin &&
-              session.user._id !== word.created!.userId
+              !session.user._id.equals(word.created!.userId)
             ) {
               res.status(403).json({
                 //FORBIDDEN
@@ -169,7 +169,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
                 message: "Unhautorized user can't edit other's words",
               })
             }
-            updateExpressions(word, session.user, db)
+
+            ///// UPDATE EXPRESSIONS
+            await updateExpressions(word, session.user, db)
 
             delete word.expressions
             const updateResult = await db.collection('words').findOneAndUpdate(
@@ -185,19 +187,39 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
                   created: word.created,
                   updated: {
                     date: new Date(),
-                    userId: session.user._id,
+                    userId: new ObjectId(session.user._id),
                     username: session.user.name,
                   },
                 },
               },
               { returnDocument: 'after' }
             )
-            console.log('-------------------- ', updateResult)
-            res.status(201).json(updateResult)
+            console.log('UPDATE -------------------- ', updateResult)
+
+            const updatedWord = await db
+              .collection('words')
+              .aggregate([
+                {
+                  $match: { _id: new ObjectId(word._id) }, //allwords
+                },
+                {
+                  $lookup: {
+                    from: 'expressions',
+                    localField: '_id',
+                    foreignField: 'words._id',
+                    as: 'expressions',
+                  },
+                },
+              ])
+              .toArray()
+
+            res.status(201).json(updatedWord[0]) //OK
+
+            // res.status(201).json(updateResult)
           }
         }
       } catch (error: any) {
-        console.log(error)
+        console.log('ERROR CATCHED: ', error)
         res.status(500).json({
           name: error.name,
           message: error.message,
@@ -207,7 +229,6 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     case 'DELETE':
       try {
         const word: Word = req.body.word
-        const session = await getSession({ req })
         if (!session) {
           res.status(401).json({
             name: 'Error',
@@ -261,13 +282,75 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   }
 }
 
-function updateExpressions(word: Word, user: SessionUser, database: Db) {
-  if (word.expressions) {
-    try {
-      word.expressions.forEach(async (exp) => {
+async function updateExpressions(
+  expressionsWord: Word,
+  user: SessionUser,
+  database: Db
+) {
+  try {
+    // carica dal database le attuali espressioni con la parola
+    //{"words._id": ObjectId('64cbccee9d7e21c19c653aa5')}
+    const expressionsLinkedInDatabase = await database
+      .collection('expressions')
+      .find({ 'words._id': new ObjectId(expressionsWord._id) })
+      .toArray()
+
+    // clacola le espressioni rimosse, da modificare nel database
+    const removedExpressions = expressionsLinkedInDatabase.filter((expr) => {
+      const index = expressionsWord.expressions?.findIndex((item) => {
+        console.log(
+          '---',
+          expr._id,
+          '---',
+          item._id,
+          ' : ',
+          expr._id.equals(item._id!)
+        )
+        return expr._id.equals(item._id!)
+      })
+      console.log(index)
+      return index
+    })
+
+    console.log(
+      'rrrrrrrremovedrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr',
+      removedExpressions
+    )
+
+    //update expression in database removing link to word
+    //words with filter
+    removedExpressions.forEach(async (exp) => {
+      const newWords = exp.words.filter((w: Word) => {
+        return !w._id?.equals(expressionsWord._id!)
+      })
+      exp.words = newWords
+
+      const updateResult = await database.collection('expressions').updateOne(
+        // { _id: new ObjectId(expId) },
+        { _id: exp._id },
+        {
+          $set: {
+            // clautano: exp.clautano,
+            // italiano: exp.italiano,
+            // voc_claut_1996: exp.voc_claut_1996,
+            // isVerified: user.isVerified,
+            updated: {
+              userId: user._id,
+              username: user.name,
+              date: new Date(),
+            },
+            words: newWords,
+          },
+        }
+        // { upsert: true }
+      )
+    })
+
+    if (expressionsWord.expressions) {
+      expressionsWord.expressions.forEach(async (exp) => {
         if (!exp._id) {
           ////// NEW EXPRESSION
-          console.log('new ---->', { exp })
+          console.log('ADDING NEW EXPRESSION---->', { exp })
           exp.created = {
             userId: user._id,
             username: user.name,
@@ -275,14 +358,17 @@ function updateExpressions(word: Word, user: SessionUser, database: Db) {
           }
           exp.isVerified = user.isVerified
           exp.words = [
-            { _id: new ObjectId(word._id), clautano: word.clautano ?? '' },
+            {
+              _id: new ObjectId(expressionsWord._id),
+              clautano: expressionsWord.clautano ?? '',
+            },
           ]
           const insertResult = await database
             .collection('expressions')
             .insertOne(exp)
         } else {
           ////// UPDATE EXPRESSION
-          console.log('update ---->', { exp })
+          console.log('UPDATING EXPRESSION ---->', { exp })
 
           const wordsSet = []
           const map = new Map()
@@ -322,10 +408,10 @@ function updateExpressions(word: Word, user: SessionUser, database: Db) {
         //   const expRemoved = await Expression.findByIdAndDelete(exp._id);
         // }
       })
-    } catch (e) {
-      console.log({ e })
-      throw e
     }
+  } catch (e) {
+    console.log({ e })
+    throw e
   }
 
   return 'CIAO'

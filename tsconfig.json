@@ -13,7 +13,7 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "preserve"
   },
   "include": [
     "next-env.d.ts",
@@ -22,7 +22,8 @@
     "pages/_app.js",
     "pages/api/auth/[...nextauth].ts",
     "pages/user/userProfile.tsx",
-    "__tests__/prova.test.js"
+    "__tests__/prova.test.js",
+    "next.config.js"
   ],
   "exclude": ["node_modules"]
 }

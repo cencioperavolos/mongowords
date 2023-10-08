@@ -1,0 +1,62 @@
+$color-primary-0: #eae5de; // PAPER Main Primary color  */
+$color-primary-1: #fff9f0; // HONEY
+$color-primary-2: #fffbf5; // LIGHT
+$color-primary-3: #a79070; // SUGAR
+$color-primary-4: #6e5736; // DARK
+
+$color-complement-0: #a8b3be; //#909498; Main Complement color */
+$color-complement-1: #91c2ec; //#edf4fa;
+$color-complement-2: #e0eefd; //#c1c5c9;
+$color-complement-3: #91c2ec; //#4b5c6c;
+$color-complement-4: #184672; //#263747;
+
+$paper: $color-primary-0;
+$honey: $color-primary-1;
+$light: $color-primary-2;
+$sugar: $color-primary-3;
+$dark: $color-primary-4;
+
+$info: $color-complement-1;
+$light2: $color-complement-2;
+$dark2: $color-complement-4;
+$sugar2: $color-complement-3;
+
+$component-active-bg: $dark;
+
+$custom-colors: (
+  'paper': $paper,
+  'honey': $honey,
+  'light': $light,
+  'sugar': $sugar,
+  'dark': $dark,
+  'info': $info,
+  'light2': $light2,
+  'sugar2': $sugar2,
+  'dark2': $dark2,
+);
+
+@import '../../node_modules/bootstrap/scss/functions';
+@import '../../node_modules/bootstrap/scss/variables';
+@import '../../node_modules/bootstrap/scss/mixins';
+
+$theme-colors: map-merge($theme-colors, $custom-colors);
+
+$pagination-bg: $honey;
+$pagination-border-color: $dark;
+$pagination-active-color: $light;
+$pagination-active-bg: $sugar;
+$pagination-active-border-color: $dark;
+$pagination-focus-bg: $sugar;
+// $pagination-focus-box-shadow: none;
+
+$btn-hover-bg-tint-amount: 25%;
+$btn-disabled-opacity: 0.25;
+
+$link-color: $dark;
+$link-decoration: none;
+// $link-shade-percentage: 25%;
+// $link-hover-color: shift-color($link-color, $link-shade-percentage);
+$link-hover-color: transparentize($link-color, 0.5);
+$link-hover-decoration: null !default;
+
+@import '/node_modules/bootstrap/scss/bootstrap.scss';
