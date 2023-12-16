@@ -8,9 +8,10 @@ function userProfile() {
   const [userDetail, setUserDetail] = useState<User | undefined>()
 
   useEffect(() => {
-    fetch(`http://localhost:3000/api/user`)
+    fetch(`/api/user`)
       .then((response) => response.json())
       .then((result) => {
+        console.log('result: -------------------> ', result)
         setUserDetail(result)
       })
       .catch((error) => {
