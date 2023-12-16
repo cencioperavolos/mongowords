@@ -72,7 +72,7 @@ function userProfile() {
             : 'Utente da verificare'}{' '}
           {session!.user.isAdmin && '- AMMINISTRATORE'}{' '}
         </p>
-        <p>Totale parole inserite: {userDetail?.wordsCreated}</p>
+        <p>Totale parole inserite: {userDetail?.createdWords}</p>
       </div>
       <form method='PUT' onSubmit={handleSubmit}>
         <div className='form-floating pb-1'>
