@@ -20,11 +20,11 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             .collection('users')
             .findOne({ _id: new ObjectId(session.user._id) })
 
-          const wordsCreated = await db.collection('words').countDocuments({
+          const createdWords = await db.collection('words').countDocuments({
             'created.userId': new ObjectId(session.user._id),
           })
 
-          if (result) result.wordsCreated = wordsCreated
+          if (result) result.createdWords = createdWords
 
           console.log(result)
           res.status(201).json(result)
