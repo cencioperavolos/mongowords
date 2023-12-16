@@ -82,7 +82,9 @@ const wordPage = () => {
                   setEdit(false)
                   setLoading(false)
                 } else {
-                  throw new Error(`ERROR - response status: ${response.status}`)
+                  throw new Error(
+                    `Response status: ${response.status}\n[${result.name}] ${result.message}`
+                  )
                 }
                 console.log('Result of word delete: ', response, result)
               })
@@ -194,7 +196,7 @@ const wordPage = () => {
                           )
                         } else {
                           throw new Error(
-                            `ERROR - response status: ${response.status}`
+                            `Response status: ${response.status}\n[${result.name}] ${result.message}`
                           )
                         }
                         console.log('Result of word save: ', response, result)
