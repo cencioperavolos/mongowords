@@ -3,9 +3,11 @@ import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 
 function userProfile() {
+  type ExtendedUser = User & { createdWords?: number }
+
   const { data: session, status } = useSession()
 
-  const [userDetail, setUserDetail] = useState<User | undefined>()
+  const [userDetail, setUserDetail] = useState<ExtendedUser | undefined>()
 
   useEffect(() => {
     fetch(`/api/user`)
@@ -20,15 +22,17 @@ function userProfile() {
   }, [])
 
   const onChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
-    setUserDetail((prevState: User | undefined) => {
+    setUserDetail((prevState: ExtendedUser | undefined) => {
       return {
         ...prevState,
         info: { ...prevState?.info, [event.target.name]: event.target.value },
-      } as User
+      } as ExtendedUser
     })
   }
 
   const handleSubmit = (event: React.FormEvent) => {
+    if (userDetail) delete userDetail.createdWords
+
     event.preventDefault()
     const requestOptions = {
       method: 'PUT',
@@ -60,14 +64,15 @@ function userProfile() {
       <div className='text-center mt-2'>
         <p>
           <b>{session!.user!.email}</b>
+          {session?.user?.name ? ` - ${session.user.name}` : ''}
         </p>
-        <p> {session?.user?.name ? ` - ${session.user.name}` : ''}</p>
         <p>
           {session?.user.isVerified
             ? 'Utente verificato'
             : 'Utente da verificare'}{' '}
           {session!.user.isAdmin && '- AMMINISTRATORE'}{' '}
         </p>
+        <p>Totale parole inserite: {userDetail?.wordsCreated}</p>
       </div>
       <form method='PUT' onSubmit={handleSubmit}>
         <div className='form-floating pb-1'>
