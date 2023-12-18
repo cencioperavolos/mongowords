@@ -357,12 +357,18 @@ async function updateExpressions(
             date: new Date(),
           }
           exp.isVerified = user.isVerified
-          exp.words = [
-            {
-              _id: new ObjectId(expressionsWord._id),
-              clautano: expressionsWord.clautano ?? '',
-            },
-          ]
+          let wordsForExpression = []
+          wordsForExpression.push({
+            _id: new ObjectId(expressionsWord._id),
+            clautano: expressionsWord.clautano ?? '',
+          })
+          for (const item of exp.words ? exp.words : []) {
+            wordsForExpression.push({
+              _id: new ObjectId(item._id),
+              clautano: item.clautano,
+            })
+          }
+          exp.words = wordsForExpression
           const insertResult = await database
             .collection('expressions')
             .insertOne(exp)
