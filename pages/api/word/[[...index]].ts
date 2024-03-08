@@ -236,7 +236,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
           })
         } else if (
           !session.user.isAdmin &&
-          session.user._id !== word.created!.userId
+          !session.user._id.equals(word.created!.userId)
         ) {
           res.status(401).json({
             name: 'Error',
